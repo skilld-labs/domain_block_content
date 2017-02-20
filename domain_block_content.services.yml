@@ -1,0 +1,9 @@
+services:
+  domain_block_content.handler:
+    class: Drupal\domain_block_content\DomainBlockContentHandler
+    arguments: ['@entity_type.manager', '@domain.negotiator', '@entity.query']
+  domain_block_content.route_subscriber:
+    class: Drupal\domain_block_content\Routing\DomainBlockContentRouteSubscriber
+    arguments: ['@entity_type.manager']
+    tags:
+      - { name: event_subscriber }

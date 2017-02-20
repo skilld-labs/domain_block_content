@@ -1,0 +1,122 @@
+<?php
+
+/**
+ * @file
+ * Domain block content hooks.
+ */
+
+use Drupal\block_content\BlockContentTypeInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\domain_block_content\DomainBlockContentBlock;
+use Drupal\domain_block_content\DomainBlockContentHandler;
+use Drupal\domain_block_content\EntityClone\Content\DomainBlockContentEntityCloneBase;
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function domain_block_content_form_block_content_basic_edit_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  if (empty($form['domain_access'])) {
+    return FALSE;
+  }
+
+  $block_content = $form_state->getFormObject()->getEntity();
+
+  // Apply restriction only to related block content entities.
+  if (!$block_content) {
+    return FALSE;
+  }
+  if (!($block_content instanceof FieldableEntityInterface)) {
+    return FALSE;
+  }
+  if (!$block_content->hasField(DomainBlockContentHandler::FIELD_NAME)) {
+    return FALSE;
+  }
+
+  $options = $form['domain_access']['widget']['#options'];
+  $used_ids = \Drupal::service('domain_block_content.handler')
+    ->getAllUsedDomainIds($block_content);
+
+  foreach ($used_ids as $used_id) {
+    if (isset($options[$used_id])) {
+      unset($options[$used_id]);
+    }
+  }
+
+  if ($options) {
+    $form['domain_access']['widget']['#options'] = $options;
+  }
+  else {
+    $form['domain_access']['#access'] = FALSE;
+    drupal_set_message(t("This content block can't be assigned to some sub-domain because all sub-domains already in use.<br>Add new sub-domain first (or update existing block) and edit this content block again."), 'error');
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter().
+ */
+function domain_block_content_form_block_content_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $block_type = $form_state->getFormObject()->getEntity();
+
+  $form['domain_block_content'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Allow add duplicates for specific domain.'),
+    '#default_value' => $block_type->getThirdPartySetting('domain_block_content', 'domain_block_content'),
+  ];
+
+  $form['#entity_builders'][] = 'domain_block_content_form_block_content_type_form_builder';
+}
+
+/**
+ * Entity builder for the block content type entity.
+ */
+function domain_block_content_form_block_content_type_form_builder($entity_type, BlockContentTypeInterface $block_type, &$form, FormStateInterface $form_state) {
+  $handler = \Drupal::service('domain_block_content.handler');
+
+  if ($form_state->getValue('domain_block_content')) {
+    $block_type->setThirdPartySetting(
+      'domain_block_content',
+      'domain_block_content',
+      $form_state->getValue('domain_block_content')
+    );
+    $handler->addField('block_content', $block_type->id());
+  }
+  else {
+    $block_type->unsetThirdPartySetting(
+      'domain_block_content',
+      'domain_block_content'
+    );
+    $handler->deleteField('block_content', $block_type->id());
+  }
+}
+
+/**
+ * Implements hook_entity_type_alter().
+ */
+function domain_block_content_entity_type_alter(array &$entity_types) {
+
+  if (!isset($entity_types['block_content'])) {
+    return FALSE;
+  }
+
+  $entity_types['block_content']->setHandlerClass(
+    'entity_clone',
+    DomainBlockContentEntityCloneBase::class
+  );
+}
+
+/**
+ * Implements hook_block_alter().
+ */
+function domain_block_content_block_alter(&$definitions) {
+
+  foreach ($definitions as $id => $definition) {
+    if (strpos($id, 'block_content:') === 0) {
+
+      $definitions[$id]['id'] = 'domain_block_content';
+      $definitions[$id]['class'] = DomainBlockContentBlock::class;
+      $definitions[$id]['provider'] = 'domain_block_content';
+    }
+  }
+}

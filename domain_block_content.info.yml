@@ -1,0 +1,8 @@
+name: Domain custom block
+description: 'Provide ability set Custom Block per domain.'
+package: Domain
+type: module
+core: 8.x
+dependencies:
+  - domain_entity
+  - entity_clone
