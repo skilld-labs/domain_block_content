@@ -78,7 +78,7 @@ class DomainBlockContentBlock extends BlockContentBlock {
       $uuid = $this->getDerivativeId();
       $block_content = $this->entityManager->loadEntityByUuid('block_content', $uuid);
 
-      if ($this->domainBlockContentHandler->isAccessibleForCurrentDomain($block_content)) {
+      if ($block_content && $this->domainBlockContentHandler->isAccessibleForCurrentDomain($block_content)) {
         $this->blockContent = $block_content;
       }
       else {
