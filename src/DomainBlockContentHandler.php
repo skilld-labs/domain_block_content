@@ -232,7 +232,8 @@ class DomainBlockContentHandler {
   public function getBlockContentDomainChildrenIds($uuid, $domain_related = FALSE) {
     $query = $this->entityQuery
       ->get('block_content')
-      ->condition(self::FIELD_NAME, $uuid);
+      ->condition(self::FIELD_NAME, $uuid)
+      ->accessCheck(FALSE);
 
     if ($domain_related) {
       $query->condition(
@@ -242,6 +243,25 @@ class DomainBlockContentHandler {
     }
 
     return $query->execute();
+  }
+
+  /**
+   * Return Block content parent entity ID related to requested UUID.
+   *
+   * @param string $uuid
+   *   Entity UUID.
+   *
+   * @return int
+   *   Block content entity ID.
+   */
+  public function getBlockContentDomainParentId($uuid) {
+    $result = $this->entityQuery
+      ->get('block_content')
+      ->condition('uuid', $uuid)
+      ->accessCheck(FALSE)
+      ->execute();
+
+    return $result ? reset($result) : 0;
   }
 
   /**
@@ -274,12 +294,11 @@ class DomainBlockContentHandler {
         $blocks = $storage->loadMultiple($ids);
       }
 
-      // Load and append parent block content entity to the blocks list.
-      $parent_block = $storage->loadByProperties(['uuid' => $uuid]);
+      // Get and append parent block content entity to the blocks list.
+      $parent_id = $this->getBlockContentDomainParentId($uuid);
 
-      if ($parent_block) {
-        $parent_block = reset($parent_block);
-        $blocks[$parent_block->id()] = $parent_block;
+      if ($parent_id) {
+        $blocks[$parent_id] = $storage->load($parent_id);
       }
     }
     else {

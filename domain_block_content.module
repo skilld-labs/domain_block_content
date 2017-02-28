@@ -15,7 +15,7 @@ use Drupal\domain_block_content\EntityClone\Content\DomainBlockContentEntityClon
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function domain_block_content_form_block_content_basic_edit_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+function domain_block_content_form_block_content_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
   if (empty($form['domain_access'])) {
     return FALSE;
