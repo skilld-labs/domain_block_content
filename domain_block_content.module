@@ -44,25 +44,28 @@ function domain_block_content_form_block_content_form_alter(&$form, FormStateInt
     }
   }
 
-  if ($options) {
-    $form['domain_access']['widget']['#options'] = $options;
-  }
-  else {
-    $form['domain_access']['#access'] = FALSE;
-    drupal_set_message(t("This content block can't be assigned to some sub-domain because all sub-domains already in use.<br>Add new sub-domain first (or update existing block) and edit this content block again."), 'error');
-  }
+  $form['domain_access']['widget']['#title'] .= ' ' . t('[clone per domain]');
+
+  //if ($options) {
+  //  $form['domain_access']['widget']['#options'] = $options;
+  //}
+  //else {
+  //  $form['domain_access']['#access'] = FALSE;
+  //  drupal_set_message(t("This content block can't be assigned to some sub-domain because all sub-domains already in use.<br>Add new sub-domain first (or update existing block) and edit this content block again."), 'error');
+  //}
 }
 
 /**
  * Implements hook_form_BASE_FORM_ID_alter().
  */
 function domain_block_content_form_block_content_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  $handler = \Drupal::service('domain_block_content.handler');
   $block_type = $form_state->getFormObject()->getEntity();
 
   $form['domain_block_content'] = [
     '#type' => 'checkbox',
     '#title' => t('Allow add duplicates for specific domain.'),
-    '#default_value' => $block_type->getThirdPartySetting('domain_block_content', 'domain_block_content'),
+    '#default_value' => (int) $handler->getField('block_content', $block_type->id()),
   ];
 
   $form['#entity_builders'][] = 'domain_block_content_form_block_content_type_form_builder';
@@ -75,18 +78,9 @@ function domain_block_content_form_block_content_type_form_builder($entity_type,
   $handler = \Drupal::service('domain_block_content.handler');
 
   if ($form_state->getValue('domain_block_content')) {
-    $block_type->setThirdPartySetting(
-      'domain_block_content',
-      'domain_block_content',
-      $form_state->getValue('domain_block_content')
-    );
     $handler->addField('block_content', $block_type->id());
   }
   else {
-    $block_type->unsetThirdPartySetting(
-      'domain_block_content',
-      'domain_block_content'
-    );
     $handler->deleteField('block_content', $block_type->id());
   }
 }

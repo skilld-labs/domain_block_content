@@ -6,6 +6,7 @@ use Drupal\block_content\BlockContentInterface;
 use Drupal\block_content\Plugin\Block\BlockContentBlock;
 use Drupal\Core\Block\BlockManagerInterface;
 use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Routing\UrlGeneratorInterface;
 use Drupal\Core\Session\AccountInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -78,17 +79,20 @@ class DomainBlockContentBlock extends BlockContentBlock {
       $uuid = $this->getDerivativeId();
       $block_content = $this->entityManager->loadEntityByUuid('block_content', $uuid);
 
-      if ($block_content && $this->domainBlockContentHandler->isAccessibleForCurrentDomain($block_content)) {
-        $this->blockContent = $block_content;
-      }
-      else {
-        $id = $this->domainBlockContentHandler->getBlockContentDomainChildId($uuid);
-        $this->blockContent = $this->entityManager->getStorage('block_content')->load($id);
+      if ($block_content instanceof FieldableEntityInterface) {
 
-        // Replace current block title with title
-        // from loaded block for having actual version.
-        if ($this->blockContent instanceof BlockContentInterface) {
-          $this->setConfigurationValue('label', $this->blockContent->label());
+        if ($this->domainBlockContentHandler->isAccessibleForCurrentDomain($block_content, $uuid)) {
+          $this->blockContent = $block_content;
+        }
+        elseif ($this->domainBlockContentHandler->getField('block_content', $block_content->bundle())) {
+          $id = $this->domainBlockContentHandler->getBlockContentDomainChildId($uuid);
+          $this->blockContent = $this->entityManager->getStorage('block_content')->load($id);
+
+          // Replace current block title with title
+          // from loaded block for having actual version.
+          if ($this->blockContent instanceof BlockContentInterface) {
+            $this->setConfigurationValue('label', $this->blockContent->label());
+          }
         }
       }
     }

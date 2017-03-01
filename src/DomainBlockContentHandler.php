@@ -91,9 +91,7 @@ class DomainBlockContentHandler {
    *   The entity type's bundle.
    */
   public function deleteField($entity_type_id, $bundle) {
-    $field = $this->entityTypeManager
-      ->getStorage('field_config')
-      ->load($entity_type_id . '.' . $bundle . '.' . self::FIELD_NAME);
+    $field = $this->getField($entity_type_id, $bundle);
 
     if ($field) {
       $field->delete();
@@ -111,7 +109,7 @@ class DomainBlockContentHandler {
   public function addField($entity_type_id, $bundle) {
     $field_storage = $this->createFieldStorage($entity_type_id);
     $field_config_storage = $this->entityTypeManager->getStorage('field_config');
-    $field = $field_config_storage->load($entity_type_id . '.' . $bundle . '.' . self::FIELD_NAME);
+    $field = $this->getField($entity_type_id, $bundle);
 
     if (empty($field)) {
       $field = [
@@ -124,6 +122,23 @@ class DomainBlockContentHandler {
 
       $field_config_storage->create($field)->save();
     }
+  }
+
+  /**
+   * Return domain block parent field config.
+   *
+   * @param string $entity_type_id
+   *   The entity type machine name.
+   * @param string $bundle
+   *   The entity type's bundle.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   *   Domain block parent field config if available or NULL otherwise.
+   */
+  public function getField($entity_type_id, $bundle) {
+    return $this->entityTypeManager
+      ->getStorage('field_config')
+      ->load($entity_type_id . '.' . $bundle . '.' . self::FIELD_NAME);
   }
 
   /**
@@ -158,11 +173,13 @@ class DomainBlockContentHandler {
    *
    * @param \Drupal\Core\Entity\FieldableEntityInterface $block_content
    *   Entity object.
+   * @param string $uuid
+   *   Parent entity UUID.
    *
    * @return bool
    *   Result of check.
    */
-  public function isAccessibleForCurrentDomain(FieldableEntityInterface $block_content) {
+  public function isAccessibleForCurrentDomain(FieldableEntityInterface $block_content, $uuid) {
 
     if (!$this->isCorrectEntity($block_content)) {
       return TRUE;
@@ -170,9 +187,9 @@ class DomainBlockContentHandler {
 
     $domains = $this->getEntityRelatedDomains($block_content);
 
-    // If domains not selected - available for all domains.
+    // If domains not selected - check is domain specific child available.
     if (empty($domains)) {
-      return TRUE;
+      return !$this->getBlockContentDomainChildId($uuid);
     }
 
     $current_domain_id = $this->domainNegotiator->getActiveId();
