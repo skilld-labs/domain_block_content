@@ -18,7 +18,16 @@ class DomainBlockContentEntityCloneBase extends ContentEntityCloneBase {
   public function cloneEntity(EntityInterface $entity, EntityInterface $cloned_entity, $properties = []) {
 
     if ($label_key = $this->entityTypeManager->getDefinition($this->entityTypeId)->getKey('label')) {
-      $cloned_entity->set($label_key, $entity->label() . ' - Cloned');
+      $languages = $cloned_entity->getTranslationLanguages();
+
+      foreach ($languages as $language) {
+        $cloned_entity_translation = $cloned_entity->getTranslation($language->getId());
+
+        if ($cloned_entity_translation) {
+          $cloned_entity_translation->set($label_key, $cloned_entity_translation->label() . ' - Cloned');
+          $cloned_entity_translation->save();
+        }
+      }
     }
 
     // Setup parent Block content UUID value.

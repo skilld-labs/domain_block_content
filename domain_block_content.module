@@ -45,6 +45,7 @@ function domain_block_content_form_block_content_form_alter(&$form, FormStateInt
   }
 
   $form['domain_access']['widget']['#title'] .= ' ' . t('[clone per domain]');
+  $form['actions']['submit']['#submit'][] = 'domain_block_content_form_block_content_form_submit';
 
   //if ($options) {
   //  $form['domain_access']['widget']['#options'] = $options;
@@ -56,16 +57,29 @@ function domain_block_content_form_block_content_form_alter(&$form, FormStateInt
 }
 
 /**
+ * Custom block_content_form submit handler for invalidating related caches.
+ */
+function domain_block_content_form_block_content_form_submit($form, FormStateInterface $form_state) {
+  \Drupal::service('domain_block_content.handler')
+    ->invalidateRelatedCaches($form_state->getFormObject()->getEntity());
+}
+
+/**
  * Implements hook_form_BASE_FORM_ID_alter().
  */
 function domain_block_content_form_block_content_type_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   $handler = \Drupal::service('domain_block_content.handler');
   $block_type = $form_state->getFormObject()->getEntity();
 
+  // Nothing to do: If domain entity field is not available.
+  if (!$handler->getDomainField('block_content', $block_type->id())) {
+    return FALSE;
+  }
+
   $form['domain_block_content'] = [
     '#type' => 'checkbox',
     '#title' => t('Allow add duplicates for specific domain.'),
-    '#default_value' => (int) $handler->getField('block_content', $block_type->id()),
+    '#default_value' => (int) $handler->getRelationField('block_content', $block_type->id()),
   ];
 
   $form['#entity_builders'][] = 'domain_block_content_form_block_content_type_form_builder';

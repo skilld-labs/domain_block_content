@@ -2,6 +2,7 @@
 
 namespace Drupal\domain_block_content;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Entity\Query\QueryFactory;
@@ -91,7 +92,7 @@ class DomainBlockContentHandler {
    *   The entity type's bundle.
    */
   public function deleteField($entity_type_id, $bundle) {
-    $field = $this->getField($entity_type_id, $bundle);
+    $field = $this->getRelationField($entity_type_id, $bundle);
 
     if ($field) {
       $field->delete();
@@ -109,7 +110,7 @@ class DomainBlockContentHandler {
   public function addField($entity_type_id, $bundle) {
     $field_storage = $this->createFieldStorage($entity_type_id);
     $field_config_storage = $this->entityTypeManager->getStorage('field_config');
-    $field = $this->getField($entity_type_id, $bundle);
+    $field = $this->getRelationField($entity_type_id, $bundle);
 
     if (empty($field)) {
       $field = [
@@ -135,10 +136,42 @@ class DomainBlockContentHandler {
    * @return \Drupal\Core\Entity\EntityInterface|null
    *   Domain block parent field config if available or NULL otherwise.
    */
-  public function getField($entity_type_id, $bundle) {
+  public function getRelationField($entity_type_id, $bundle) {
+    return $this->getField($entity_type_id, $bundle, self::FIELD_NAME);
+  }
+
+  /**
+   * Return domain block domain entity field config.
+   *
+   * @param string $entity_type_id
+   *   The entity type machine name.
+   * @param string $bundle
+   *   The entity type's bundle.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   *   Domain block parent field config if available or NULL otherwise.
+   */
+  public function getDomainField($entity_type_id, $bundle) {
+    return $this->getField($entity_type_id, $bundle, DomainEntityMapper::FIELD_NAME);
+  }
+
+  /**
+   * Return field config related to requested data set.
+   *
+   * @param string $entity_type_id
+   *   The entity type machine name.
+   * @param string $bundle
+   *   The entity type's bundle.
+   * @param string $field_name
+   *   Field machine name.
+   *
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   *   Domain block parent field config if available or NULL otherwise.
+   */
+  public function getField($entity_type_id, $bundle, $field_name) {
     return $this->entityTypeManager
       ->getStorage('field_config')
-      ->load($entity_type_id . '.' . $bundle . '.' . self::FIELD_NAME);
+      ->load($entity_type_id . '.' . $bundle . '.' . $field_name);
   }
 
   /**
@@ -358,6 +391,77 @@ class DomainBlockContentHandler {
     }
 
     return TRUE;
+  }
+
+  /**
+   * Invalidate all tags related to requested block.
+   *
+   * @param \Drupal\Core\Entity\FieldableEntityInterface $block_content
+   *   Entity object.
+   *
+   * @return bool
+   *   Result of action.
+   */
+  public function invalidateRelatedCaches(FieldableEntityInterface $block_content) {
+    $blocks = $this->getAllBlocks($block_content);
+
+    $tags = [];
+    foreach ($blocks as $block) {
+      $tags = array_merge($tags, $block->getCacheTagsToInvalidate());
+    }
+
+    if (!$tags) {
+      return FALSE;
+    }
+
+    Cache::invalidateTags($tags);
+    return TRUE;
+  }
+
+  /**
+   * Return all blocks related to requested block (with requested block).
+   *
+   * @param \Drupal\Core\Entity\FieldableEntityInterface $block_content
+   *   Entity object.
+   *
+   * @return array
+   *   List of all related blocks + requested block.
+   */
+  public function getAllBlocks(FieldableEntityInterface $block_content) {
+    $blocks = [];
+
+    if (!$this->isCorrectEntity($block_content)) {
+      return $blocks;
+    }
+
+    $storage = $this->entityTypeManager->getStorage('block_content');
+    $uuid = $block_content->get(self::FIELD_NAME)->value;
+
+    if ($uuid) {
+      $ids = $this->getBlockContentDomainChildrenIds($uuid, FALSE);
+
+      if ($ids) {
+        $blocks = $storage->loadMultiple($ids);
+      }
+
+      // Get and append parent block content entity to the blocks list.
+      $parent_id = $this->getBlockContentDomainParentId($uuid);
+
+      if ($parent_id) {
+        $blocks[$parent_id] = $storage->load($parent_id);
+      }
+    }
+    else {
+      $ids = $this->getBlockContentDomainChildrenIds($block_content->uuid(), FALSE);
+
+      if ($ids) {
+        $blocks = $storage->loadMultiple($ids);
+      }
+
+      $blocks[$block_content->id()] = $block_content;
+    }
+
+    return $blocks;
   }
 
 }

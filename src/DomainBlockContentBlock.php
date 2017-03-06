@@ -84,7 +84,7 @@ class DomainBlockContentBlock extends BlockContentBlock {
         if ($this->domainBlockContentHandler->isAccessibleForCurrentDomain($block_content, $uuid)) {
           $this->blockContent = $block_content;
         }
-        elseif ($this->domainBlockContentHandler->getField('block_content', $block_content->bundle())) {
+        elseif ($this->domainBlockContentHandler->getRelationField('block_content', $block_content->bundle())) {
           $id = $this->domainBlockContentHandler->getBlockContentDomainChildId($uuid);
           $this->blockContent = $this->entityManager->getStorage('block_content')->load($id);
 
