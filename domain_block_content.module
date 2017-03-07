@@ -134,27 +134,29 @@ function domain_block_content_block_alter(&$definitions) {
  * @TODO: ReDo using content block titles in more faster way.
  */
 function domain_block_content_preprocess_block(&$vars) {
+  $id = isset($vars['configuration']['id']) ? $vars['configuration']['id'] : '';
+  $bundle = isset($vars['content']['#bundle']) ? $vars['content']['#bundle'] : '';
+  $label_display = isset($vars['configuration']['label_display']) ? $vars['configuration']['label_display'] : '';
 
-  if (!isset($vars['content']['#bundle'])) {
+  if (!$bundle || !$id || !$label_display) {
     return;
   }
-  if (!isset($vars['configuration']['id'])) {
-    return;
-  }
-  if (strpos($vars['configuration']['id'], 'block_content:') !== 0) {
+  if (strpos($id, 'block_content:') !== 0) {
     return;
   }
 
   $handler = \Drupal::service('domain_block_content.handler');
-  if (!$handler->getRelationField('block_content', $vars['content']['#bundle'])) {
+  if (!$handler->getRelationField('block_content', $bundle)) {
     return;
   }
 
-  list(, $uuid) = explode(':', $vars['configuration']['id']);
+  list(, $uuid) = explode(':', $id);
   $block_id = $handler->getBlockContentDomainChildId($uuid);
 
   if ($block_id) {
-    $block = \Drupal::entityTypeManager()->getStorage('block_content')->load($block_id);
+    $block = \Drupal::entityTypeManager()
+      ->getStorage('block_content')
+      ->load($block_id);
   }
   else {
     $block = $handler->loadBlockContentByUuid($uuid);
