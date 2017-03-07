@@ -128,3 +128,43 @@ function domain_block_content_block_alter(&$definitions) {
     }
   }
 }
+
+/**
+ * Implements hook_block_view_alter().
+ * @TODO: ReDo using content block titles in more faster way.
+ */
+function domain_block_content_preprocess_block(&$vars) {
+
+  if ($vars['configuration']['id'] !== 'block_content:ce39028e-d922-4f43-984c-ce4ac812d9d4') {
+    return;
+  }
+
+  if (!isset($vars['content']['#bundle'])) {
+    return;
+  }
+  if (!isset($vars['configuration']['id'])) {
+    return;
+  }
+  if (strpos($vars['configuration']['id'], 'block_content:') !== 0) {
+    return;
+  }
+
+  $handler = \Drupal::service('domain_block_content.handler');
+  if (!$handler->getRelationField('block_content', $vars['content']['#bundle'])) {
+    return;
+  }
+
+  list(, $uuid) = explode(':', $vars['configuration']['id']);
+  $block_id = $handler->getBlockContentDomainChildId($uuid);
+
+  if ($block_id) {
+    $block = \Drupal::entityTypeManager()->getStorage('block_content')->load($block_id);
+  }
+  else {
+    $block = $handler->loadBlockContentByUuid($uuid);
+  }
+
+  if (isset($block) && $block instanceof FieldableEntityInterface) {
+    $vars['label'] = $block->label();
+  }
+}
