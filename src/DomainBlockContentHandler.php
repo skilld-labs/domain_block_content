@@ -296,22 +296,22 @@ class DomainBlockContentHandler {
   }
 
   /**
-   * Return Block content parent entity ID related to requested UUID.
+   * Load block content entity by UUID without any domain access checks.
    *
    * @param string $uuid
    *   Entity UUID.
    *
-   * @return int
-   *   Block content entity ID.
+   * @return \Drupal\Core\Entity\EntityInterface|null
+   *   Related block content entity on success or NULL otherwise.
    */
-  public function getBlockContentDomainParentId($uuid) {
+  public function loadBlockContentByUuid($uuid) {
     $result = $this->entityQuery
       ->get('block_content')
       ->condition('uuid', $uuid)
       ->accessCheck(FALSE)
       ->execute();
 
-    return $result ? reset($result) : 0;
+    return $result ? $this->entityTypeManager->getStorage('block_content')->load(reset($result)) : NULL;
   }
 
   /**
@@ -345,10 +345,9 @@ class DomainBlockContentHandler {
       }
 
       // Get and append parent block content entity to the blocks list.
-      $parent_id = $this->getBlockContentDomainParentId($uuid);
-
-      if ($parent_id) {
-        $blocks[$parent_id] = $storage->load($parent_id);
+      $parent = $this->loadBlockContentByUuid($uuid);
+      if ($parent) {
+        $blocks[$parent->id()] = $parent;
       }
     }
     else {
@@ -439,10 +438,9 @@ class DomainBlockContentHandler {
       }
 
       // Get and append parent block content entity to the blocks list.
-      $parent_id = $this->getBlockContentDomainParentId($uuid);
-
-      if ($parent_id) {
-        $blocks[$parent_id] = $storage->load($parent_id);
+      $parent = $this->loadBlockContentByUuid($uuid);
+      if ($parent) {
+        $blocks[$parent->id()] = $parent;
       }
     }
     else {

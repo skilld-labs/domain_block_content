@@ -77,7 +77,7 @@ class DomainBlockContentBlock extends BlockContentBlock {
   protected function getEntity() {
     if (!isset($this->blockContent)) {
       $uuid = $this->getDerivativeId();
-      $block_content = $this->entityManager->loadEntityByUuid('block_content', $uuid);
+      $block_content = $this->domainBlockContentHandler->loadBlockContentByUuid($uuid);
 
       if ($block_content instanceof FieldableEntityInterface) {
 
