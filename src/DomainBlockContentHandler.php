@@ -168,7 +168,7 @@ class DomainBlockContentHandler {
    * @return \Drupal\Core\Entity\EntityInterface|null
    *   Domain block parent field config if available or NULL otherwise.
    */
-  public function getField($entity_type_id, $bundle, $field_name) {
+  public function getField($entity_type_id, $bundle, $field_name = self::FIELD_NAME) {
     return $this->entityTypeManager
       ->getStorage('field_config')
       ->load($entity_type_id . '.' . $bundle . '.' . $field_name);
@@ -398,9 +398,6 @@ class DomainBlockContentHandler {
    *
    * @param \Drupal\Core\Entity\FieldableEntityInterface $block_content
    *   Entity object.
-   *
-   * @return bool
-   *   Result of action.
    */
   public function invalidateRelatedCaches(FieldableEntityInterface $block_content) {
     $blocks = $this->getAllBlocks($block_content);
@@ -410,12 +407,9 @@ class DomainBlockContentHandler {
       $tags = array_merge($tags, $block->getCacheTagsToInvalidate());
     }
 
-    if (!$tags) {
-      return FALSE;
+    if ($tags) {
+      Cache::invalidateTags($tags);
     }
-
-    Cache::invalidateTags($tags);
-    return TRUE;
   }
 
   /**
