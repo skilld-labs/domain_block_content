@@ -135,10 +135,6 @@ function domain_block_content_block_alter(&$definitions) {
  */
 function domain_block_content_preprocess_block(&$vars) {
 
-  if ($vars['configuration']['id'] !== 'block_content:ce39028e-d922-4f43-984c-ce4ac812d9d4') {
-    return;
-  }
-
   if (!isset($vars['content']['#bundle'])) {
     return;
   }
