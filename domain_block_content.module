@@ -163,6 +163,23 @@ function domain_block_content_preprocess_block(&$vars) {
   }
 
   if (isset($block) && $block instanceof FieldableEntityInterface) {
+    $languages = $block->getTranslationLanguages();
     $vars['label'] = $block->label();
+
+    if (count($languages) > 1) {
+      $lng_code = \Drupal::languageManager()->getCurrentLanguage()->getId();
+
+      foreach ($languages as $language) {
+        if ($language->getId() === $lng_code) {
+
+          $block_translation = $block->getTranslation($lng_code);
+          if ($block_translation) {
+            $vars['label'] = $block_translation->label();
+          }
+
+          break;
+        }
+      }
+    }
   }
 }
