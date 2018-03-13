@@ -4,5 +4,6 @@ package: Domain
 type: module
 core: 8.x
 dependencies:
-  - domain_entity
-  - entity_clone
+  - domain_entity:domain_entity
+  - entity_clone:entity_clone
+  - drupal:block_content (>= 8.4.5)

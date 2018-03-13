@@ -3,9 +3,11 @@
 namespace Drupal\domain_block_content;
 
 use Drupal\block_content\BlockContentInterface;
+use Drupal\block_content\BlockContentUuidLookup;
 use Drupal\block_content\Plugin\Block\BlockContentBlock;
 use Drupal\Core\Block\BlockManagerInterface;
-use Drupal\Core\Entity\EntityManagerInterface;
+use Drupal\Core\Entity\EntityDisplayRepositoryInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Routing\UrlGeneratorInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -41,17 +43,21 @@ class DomainBlockContentBlock extends BlockContentBlock {
    *   The plugin implementation definition.
    * @param \Drupal\Core\Block\BlockManagerInterface $block_manager
    *   The Plugin Block Manager.
-   * @param \Drupal\Core\Entity\EntityManagerInterface $entity_manager
-   *   The entity manager service.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager service.
    * @param \Drupal\Core\Session\AccountInterface $account
    *   The account for which view access should be checked.
    * @param \Drupal\Core\Routing\UrlGeneratorInterface $url_generator
    *   The URL generator.
+   * @param \Drupal\block_content\BlockContentUuidLookup $uuid_lookup
+   *   The block content UUID lookup service.
+   * @param \Drupal\Core\Entity\EntityDisplayRepositoryInterface $entity_display_repository
+   *   The entity display repository.
    * @param \Drupal\domain_block_content\DomainBlockContentHandler $domain_block_content_handler
    *   The Domain Block content handler.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, BlockManagerInterface $block_manager, EntityManagerInterface $entity_manager, AccountInterface $account, UrlGeneratorInterface $url_generator, DomainBlockContentHandler $domain_block_content_handler) {
-    parent::__construct($configuration, $plugin_id, $plugin_definition, $block_manager, $entity_manager, $account, $url_generator);
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, BlockManagerInterface $block_manager, EntityTypeManagerInterface $entity_type_manager, AccountInterface $account, UrlGeneratorInterface $url_generator, BlockContentUuidLookup $uuid_lookup, EntityDisplayRepositoryInterface $entity_display_repository, DomainBlockContentHandler $domain_block_content_handler) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition, $block_manager, $entity_type_manager, $account, $url_generator, $uuid_lookup, $entity_display_repository);
     $this->domainBlockContentHandler = $domain_block_content_handler;
   }
 
@@ -64,9 +70,11 @@ class DomainBlockContentBlock extends BlockContentBlock {
       $plugin_id,
       $plugin_definition,
       $container->get('plugin.manager.block'),
-      $container->get('entity.manager'),
+      $container->get('entity_type.manager'),
       $container->get('current_user'),
       $container->get('url_generator'),
+      $container->get('block_content.uuid_lookup'),
+      $container->get('entity_display.repository'),
       $container->get('domain_block_content.handler')
     );
   }
