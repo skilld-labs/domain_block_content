@@ -1,0 +1,17 @@
+{
+  "name": "domain_block_content/domain_block_content",
+  "description": "Provide contact block cloning ability.",
+  "type": "drupal-module",
+  "homepage": "https://github.com/skilld-labs/domain_block_content",
+  "authors": [
+    {
+      "name": "See all contributors",
+      "homepage": "https://github.com/skilld-labs/domain_block_content/graphs/contributors"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/skilld-labs/domain_block_content/issues",
+    "source": "git@github.com:skilld-labs/domain_block_content.git"
+  },
+  "license": "GPL-2.0+"
+}
