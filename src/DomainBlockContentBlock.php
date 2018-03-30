@@ -94,7 +94,7 @@ class DomainBlockContentBlock extends BlockContentBlock {
         }
         elseif ($this->domainBlockContentHandler->getRelationField('block_content', $block_content->bundle())) {
           $id = $this->domainBlockContentHandler->getBlockContentDomainChildId($uuid);
-          $this->blockContent = $this->entityManager->getStorage('block_content')->load($id);
+          $this->blockContent = $this->entityTypeManager->getStorage('block_content')->load($id);
 
           // Replace current block title with title
           // from loaded block for having actual version.
